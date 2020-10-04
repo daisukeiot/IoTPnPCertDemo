@@ -10,7 +10,7 @@ SCRIPT=`realpath -s $0`
 SCRIPTPATH=`dirname $SCRIPT`
 
 # this becomes SN of the certificate
-REGISTRATION_ID='IoTPnPCertDemo'
+export REGISTRATION_ID="IoTPnPCertDemo_$$"
 
 # Clone Azure IoT SDK C
 if [ ! -d "${SCRIPTPATH}/azure-iot-sdk-c" ]; then
@@ -39,5 +39,5 @@ chmod a+w ${SCRIPTPATH}/cmake/*.pem
 
 # Compile the code
 cd "${SCRIPTPATH}/cmake"
-cmake .. -Duse_prov_client=ON -Dhsm_type_x509:BOOL=ON -Dhsm_type_symm_key:BOOL=OFF -Dhsm_custom_lib=custom_hsm -Dskip_samples:BOOL=ON -Duse_amqp:BOOL=OFF -Dbuild_service_client:BOOL=OFF -Duse_http=:BOOL=OFF -Duse_amqp=:BOOL=OFF -Dbuild_provisioning_service_client=:BOOL=OFF
+cmake .. -Duse_prov_client=ON -Dhsm_type_x509:BOOL=ON -Dhsm_type_symm_key:BOOL=ON -Dhsm_custom_lib=custom_hsm -Dskip_samples:BOOL=ON -Duse_amqp:BOOL=OFF -Dbuild_service_client:BOOL=OFF -Duse_http=:BOOL=OFF -Duse_amqp=:BOOL=OFF -Dbuild_provisioning_service_client=:BOOL=OFF
 cmake --build .

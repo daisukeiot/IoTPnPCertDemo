@@ -9,14 +9,23 @@
 #
 # Daisuke Nakahara (daisuken@microsoft.com)
 #
-export REGISTRATION_ID="IoTPnPCertDemo"
-export DPS_IDSCOPE='0ne000FFA42'
-export DPS_X509=1
+
+# Set IoT Plug and Play Model ID
 export PNP_MODEL_ID='dtmi:com:Example:Thermostat;1'
 
-# for Symmetric Key Provisioning (Not used in this sample)
-export DPS_REGISTRATIONID=''
-export DPS_DEVICEKEY=''
+# Set ID Scope for DPS
+export DPS_IDSCOPE='0ne000FFA42'
+
+# Detemines type of DPS attestation
+# set DPS_X509 for X.509
+# unset DPS_X509 for Symmetric Key
+export DPS_X509=1
+# unset DPS_X509
+
+# for Symmetric Key Provisioning
+# Get Device ID and Symmetric Key from the certification portal
+export DPS_DEVICE_ID=''
+export DPS_SYMMETRIC_KEY=''
 
 cd cmake
 ./SimpleThermostat

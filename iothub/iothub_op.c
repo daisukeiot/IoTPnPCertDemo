@@ -49,36 +49,41 @@ static IOTHUB_DEVICE_CLIENT_LL_HANDLE CreateDeviceClientLLHandle(APP_CONTEXT* ap
     const char* deviceKey;
     const char* x509 = NULL;
     
-    g_pnp_model_id = getenv("PNP_MODEL_ID");
+    g_pnp_model_id = getenv(IOTPNP_MODEL_ID);
 
     if ((iothubCs = getenv(IOTHUB_CS)) != NULL)
     {
         return IoTHubDeviceClient_LL_CreateFromConnectionString(iothubCs, MQTT_Protocol);
     }
-    else if ((scopeId = getenv("DPS_IDSCOPE")) == NULL)
-    {
-        LogError("Cannot read environment variable=%s", DPS_IDSCOPE);
-        return NULL;
-    }
-    else if ((x509 = getenv("DPS_X509")) != NULL)
-    {
-        return ProvisionDeviceX509(scopeId, g_pnp_model_id, appConext);
-    }
-    else if ((deviceId = getenv("DPS_REGISTRATIONID")) == NULL)
-    {
-        LogError("Cannot read environment variable=%s", DPS_REGISTRATIONID);
-        return NULL;
-    }
-    else if ((deviceKey = getenv("DPS_DEVICEKEY")) == NULL)
-    {
-        LogError("Cannot read environment variable=%s", DPS_DEVICEKEY);
-        return NULL;
-    }
     else
     {
-        return ProvisionDevice(scopeId, deviceId, deviceKey, g_pnp_model_id, appConext);
-    } 
-
+        if ((scopeId = getenv(DPS_IDSCOPE)) == NULL)
+        {
+            LogError("Cannot read environment variable=%s", DPS_IDSCOPE);
+            return NULL;
+        }
+        else if ((x509 = getenv(DPS_X509)) != NULL)
+        {
+            return ProvisionDeviceX509(scopeId, g_pnp_model_id, appConext);
+        }
+        else
+        {
+            if ((deviceId = getenv(DPS_DEVICE_ID)) == NULL)
+            {
+                LogError("Cannot read environment variable=%s", DPS_DEVICE_ID);
+                return NULL;
+            }
+            else if ((deviceKey = getenv(DPS_SYMMETRIC_KEY)) == NULL)
+            {
+                LogError("Cannot read environment variable=%s", DPS_SYMMETRIC_KEY);
+                return NULL;
+            }
+            else
+            {
+                return ProvisionDevice(scopeId, deviceId, deviceKey, g_pnp_model_id, appConext);
+            } 
+        }
+    }
     return NULL;
 }
 

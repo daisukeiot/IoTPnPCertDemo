@@ -23,8 +23,8 @@ typedef struct CUSTOM_HSM_DATA_TAG
     char* certificate;
     char* common_name;
     char* deviceKey;
-    char* registrationId;
-    char* symm_key;
+    char* deviceId;
+    char* symmetricKey;
 } CUSTOM_HSM_DATA;
 
 /*
@@ -217,14 +217,14 @@ void custom_hsm_destroy(HSM_CLIENT_HANDLE handle)
             free(hsm_info->deviceKey);
         }
 
-        if (hsm_info->symm_key != NULL)
+        if (hsm_info->symmetricKey != NULL)
         {
-            free(hsm_info->symm_key);
+            free(hsm_info->symmetricKey);
         }
 
-        if (hsm_info->registrationId != NULL)
+        if (hsm_info->deviceId != NULL)
         {
-            free(hsm_info->registrationId);
+            free(hsm_info->deviceId);
         }
 
         free(hsm_info);
@@ -332,29 +332,29 @@ HSM_CLIENT_HANDLE custom_hsm_create_symkey()
     {
         printf("Error: failed to zero set hsm_info\r\n");
     }
-    else if ((envPointer = getenv("DPS_REGISTRATIONID")) == NULL)
+    else if ((envPointer = getenv("DPS_DEVICE_ID")) == NULL)
     {
-        printf("Error: Cannot read environment variable=DPS_REGISTRATIONID\r\n");
+        printf("Error: Cannot read environment variable=DPS_DEVICE_ID\r\n");
     }
-    else if ((hsm_info->registrationId = malloc(strlen(envPointer) + 1)) == NULL)
+    else if ((hsm_info->deviceId = malloc(strlen(envPointer) + 1)) == NULL)
     {
-        printf("Error: failed to allocate buffer for DPS_DEVICEKEY\r\n");
+        printf("Error: failed to allocate buffer for DPS_DEVICE_ID\r\n");
     }
-    else if (strcpy(hsm_info->registrationId, envPointer) == NULL)
+    else if (strcpy(hsm_info->deviceId, envPointer) == NULL)
     {
-        printf("Error: failed to copy variable=DPS_DEVICEKEY to buffer\r\n");
+        printf("Error: failed to copy variable=DPS_DEVICE_ID to buffer\r\n");
     }
-    else if ((envPointer = getenv("DPS_DEVICEKEY")) == NULL)
+    else if ((envPointer = getenv("DPS_SYMMETRIC_KEY")) == NULL)
     {
-        printf("Error: Cannot read environment variable=DPS_DEVICEKEY\r\n");
+        printf("Error: Cannot read environment variable=DPS_SYMMETRIC_KEY\r\n");
     }
-    else if ((hsm_info->symm_key = malloc(strlen(envPointer) + 1)) == NULL)
+    else if ((hsm_info->symmetricKey = malloc(strlen(envPointer) + 1)) == NULL)
     {
-        printf("Error: failed to allocate buffer for DPS_DEVICEKEY\r\n");
+        printf("Error: failed to allocate buffer for DPS_SYMMETRIC_KEY\r\n");
     }
-    else if (strcpy(hsm_info->symm_key, envPointer) == NULL)
+    else if (strcpy(hsm_info->symmetricKey, envPointer) == NULL)
     {
-        printf("Error: failed to copy variable=DPS_DEVICEKEY to buffer\r\n");
+        printf("Error: failed to copy variable=DPS_SYMMETRIC_KEY to buffer\r\n");
     }
     else
     {
@@ -375,17 +375,17 @@ char* custom_hsm_get_symm_key(HSM_CLIENT_HANDLE handle)
     {
         printf("Error: %s() : Invalid handle value specified\r\n", __func__);
     }
-    else if (hsm_info->symm_key == NULL)
+    else if (hsm_info->symmetricKey == NULL)
     {
-        printf("Error: %s() : symm_key empty\r\n", __func__);
+        printf("Error: %s() : symmetricKey empty\r\n", __func__);
     }
-    else if ((buffer = (char*)malloc(strlen(hsm_info->symm_key) + 1)) == NULL)
+    else if ((buffer = (char*)malloc(strlen(hsm_info->symmetricKey) + 1)) == NULL)
     {
-        printf("Error: %s() : Failure allocating buffer for symm_key\r\n", __func__);
+        printf("Error: %s() : Failure allocating buffer for symmetricKey\r\n", __func__);
     }
     else
     {
-        strcpy(buffer, hsm_info->symm_key);
+        strcpy(buffer, hsm_info->symmetricKey);
     }
 
     return buffer;
@@ -402,23 +402,23 @@ char* custom_hsm_get_registration_name(HSM_CLIENT_HANDLE handle)
     {
         printf("Error: %s() : Invalid handle value specified\r\n", __func__);
     }
-    else if (hsm_info->registrationId == NULL)
+    else if (hsm_info->deviceId == NULL)
     {
-        printf("Error: %s() : registrationId empty\r\n", __func__);
+        printf("Error: %s() : deviceId empty\r\n", __func__);
     }
-    else if ((buffer = (char*)malloc(strlen(hsm_info->registrationId) + 1)) == NULL)
+    else if ((buffer = (char*)malloc(strlen(hsm_info->deviceId) + 1)) == NULL)
     {
-        printf("Error: %s() : Failure allocating buffer for registrationId\r\n", __func__);
+        printf("Error: %s() : Failure allocating buffer for deviceId\r\n", __func__);
     }
     else
     {
-        strcpy(buffer, hsm_info->registrationId);
+        strcpy(buffer, hsm_info->deviceId);
     }
 
     return buffer;
 }
 
-int custom_hsm_client_set_symm_key_info(HSM_CLIENT_HANDLE handle, const char* reg_name, const char* symm_key)
+int custom_hsm_client_set_symm_key_info(HSM_CLIENT_HANDLE handle, const char* reg_name, const char* symmetricKey)
 {
     return 0;
 }

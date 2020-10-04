@@ -27,9 +27,11 @@
 
 static const char IOTHUB_CS[] = "IOTHUB_CS";
 static const char DPS_IDSCOPE[]   = "DPS_IDSCOPE";
-static const char DPS_REGISTRATIONID[] = "DPS_REGISTRATIONID=";
-static const char DPS_DEVICEKEY[] = "DPS_DEVICEKEY";
+static const char DPS_X509[]   = "DPS_X509";
+static const char DPS_DEVICE_ID[] = "DPS_DEVICE_ID";
+static const char DPS_SYMMETRIC_KEY[] = "DPS_SYMMETRIC_KEY";
 static const char DPS_GLOBAL_ENDPOINT[] = "global.azure-devices-provisioning.net";
+static const char IOTPNP_MODEL_ID[] = "PNP_MODEL_ID";
 
 static bool g_hubClientTraceEnabled = false;
 
