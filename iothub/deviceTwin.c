@@ -13,12 +13,38 @@ void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE updateState, const unsigned cha
 {
     IOTHUB_DEVICE_CLIENT_LL_HANDLE deviceClient = (IOTHUB_DEVICE_CLIENT_LL_HANDLE)userContextCallback;
     APP_CONTEXT* appContext = (APP_CONTEXT* )userContextCallback;
+    char* paylod_copy = (char*)malloc(size+1);
+    JSON_Value* allJSON;
+    char* pretty;
 
-    LogInfo("%s() invoked : Update Status %s Paload %s", __func__, MU_ENUM_TO_STRING(DEVICE_TWIN_UPDATE_STATE, updateState), payload);
-
-    if (_deviceTwinCallback_fn != NULL)
+    if (paylod_copy == NULL)
     {
-        _deviceTwinCallback_fn(updateState, payload, size, userContextCallback);
+        LogError("failed to allocate json buffer");
+    }
+    else{
+        (void)memcpy(paylod_copy, payload, size);
+        paylod_copy[size] = '\0';
+
+        allJSON = json_parse_string(paylod_copy);
+
+        if (allJSON == NULL)
+        {
+            LogError("filed to parse json");
+        }
+        else 
+        {
+            pretty = json_serialize_to_string_pretty(allJSON);
+
+            LogInfo("%s() : Update Status %s Paload \r\n%s", __func__, MU_ENUM_TO_STRING(DEVICE_TWIN_UPDATE_STATE, updateState), pretty);
+
+            if (_deviceTwinCallback_fn != NULL)
+            {
+                _deviceTwinCallback_fn(updateState, payload, size, userContextCallback);
+            }
+            json_value_free(allJSON);
+        }
+
+        free(paylod_copy);
     }
 }
 

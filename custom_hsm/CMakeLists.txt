@@ -2,7 +2,8 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 cmake_minimum_required(VERSION 2.8.11)
-
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 include_directories(${azure_iot_sdks_SOURCE_DIR}/provisioning_client/adapters)

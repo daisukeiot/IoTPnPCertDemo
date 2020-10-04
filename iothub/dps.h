@@ -7,6 +7,7 @@
 #ifndef _DPS
 #define _DPS
 
+#include "main.h"
 #include "iothub_op.h"
 #include "iothub_device_client_ll.h"
 #include "azure_prov_client/iothub_security_factory.h"
@@ -25,7 +26,7 @@ typedef struct DPS_CLIENT_CONTEXT_TAG
     bool registration_complete;
 } DPS_CLIENT_CONTEXT;
 
-IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDevice(const char* scopeId, const char* deviceId, const char* deviceKey, const char* modelId);
-IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDeviceX509(const char* scopeId, const char* modelId);
+IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDevice(const char* scopeId, const char* deviceId, const char* deviceKey, const char* modelId, APP_CONTEXT* appConext);
+IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDeviceX509(const char* scopeId, const char* modelId, APP_CONTEXT* appConext);
 
 #endif /* _DPS */

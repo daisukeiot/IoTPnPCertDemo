@@ -9,6 +9,7 @@
 #////////////////////////////////////////////////////////////////////////////
 cmake_minimum_required(VERSION 2.8.11)
 project(SimpleThermostat)
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
 
 #Compile As C99
 if (CMAKE_VERSION VERSION_LESS "3.1")

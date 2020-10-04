@@ -13,7 +13,7 @@ static double g_currentTemperature = DEFAULT_TEMPERATURE_VALUE;
 static double g_minTemperature = DEFAULT_TEMPERATURE_VALUE;
 static double g_maxTemperature = DEFAULT_TEMPERATURE_VALUE;
 static double g_allTemperatures = DEFAULT_TEMPERATURE_VALUE;
-static int g_numTemperatureUpdates = 0;
+static int g_numTemperatureUpdates = 1;
 char g_ProgramStartTime[128];
 
 int main(int argc, char *argv[])
@@ -274,9 +274,23 @@ static bool BuildMaxMinCommandResponse(unsigned char** response, size_t* respons
 
     if (result == true)
     {
-        *response = responseBuilder;
-        *responseSize = (size_t)responseBuilderSize;
-        LogInfo("Response=<%s>", (const char*)responseBuilder);
+        JSON_Value *json_root = json_parse_string(responseBuilder);
+
+        if (json_root == NULL)
+        {
+            printf("json root null\r\n");
+        }
+        else{
+            char* pretty = json_serialize_to_string_pretty(json_root);
+            *response = responseBuilder;
+            *responseSize = (size_t)responseBuilderSize;
+            LogInfo("Response\r\n%s", pretty);
+
+            if (pretty != NULL)
+            {
+                json_free_serialized_string(pretty);
+            }
+        }
     }
     else
     {

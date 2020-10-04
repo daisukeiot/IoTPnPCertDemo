@@ -16,22 +16,21 @@ const char* g_pnp_model_id = NULL;
 /*
 ** Receives callback when IoT Hub connection status change
 **
-** To Do : Add DPS support
 */
-static void connection_status_callback(IOTHUB_CLIENT_CONNECTION_STATUS isConfigured, IOTHUB_CLIENT_CONNECTION_STATUS_REASON reason, void* userContextCallback)
+static void connection_status_callback(IOTHUB_CLIENT_CONNECTION_STATUS connectionStatus, IOTHUB_CLIENT_CONNECTION_STATUS_REASON reason, void* userContextCallback)
 {
     APP_CONTEXT* appContext = (APP_CONTEXT* )userContextCallback;
 
-    (void)reason;
-
-    if (isConfigured == IOTHUB_CLIENT_CONNECTION_AUTHENTICATED)
+    if (connectionStatus == IOTHUB_CLIENT_CONNECTION_AUTHENTICATED)
     {
-        LogInfo("The device client is connected to iothub");
+        LogInfo("Connected to iothub : %s", appContext->iothub_uri);
         appContext->isConnected = true;
     }
     else
     {
-        LogInfo("The device client has been disconnected");
+        LogError("The device client has been disconnected : Connection Status %s : Reason %s", 
+                    MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONNECTION_STATUS, connectionStatus),
+                    MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONNECTION_STATUS_REASON, reason));
         appContext->isConnected = false;
         IoTHub_Deinit();
     }
@@ -42,12 +41,13 @@ static void connection_status_callback(IOTHUB_CLIENT_CONNECTION_STATUS isConfigu
 **
 ** To Do : Add DPS support
 */
-static IOTHUB_DEVICE_CLIENT_LL_HANDLE CreateDeviceClientLLHandle(void)
+static IOTHUB_DEVICE_CLIENT_LL_HANDLE CreateDeviceClientLLHandle(APP_CONTEXT* appConext)
 {
     const char* iothubCs;
     const char* scopeId;
     const char* deviceId;
     const char* deviceKey;
+    const char* x509 = NULL;
     
     g_pnp_model_id = getenv("PNP_MODEL_ID");
 
@@ -60,11 +60,9 @@ static IOTHUB_DEVICE_CLIENT_LL_HANDLE CreateDeviceClientLLHandle(void)
         LogError("Cannot read environment variable=%s", DPS_IDSCOPE);
         return NULL;
     }
-    else if ((deviceId = getenv("DPS_X509")) != NULL)
+    else if ((x509 = getenv("DPS_X509")) != NULL)
     {
-        LogInfo("Provisioning with X509 Start ===>");
-        return ProvisionDeviceX509(scopeId, g_pnp_model_id);
-        LogInfo("Provisioning End   <===");
+        return ProvisionDeviceX509(scopeId, g_pnp_model_id, appConext);
     }
     else if ((deviceId = getenv("DPS_REGISTRATIONID")) == NULL)
     {
@@ -78,9 +76,7 @@ static IOTHUB_DEVICE_CLIENT_LL_HANDLE CreateDeviceClientLLHandle(void)
     }
     else
     {
-        LogInfo("Provisioning Start ===>");
-        return ProvisionDevice(scopeId, deviceId, deviceKey, g_pnp_model_id);
-        LogInfo("Provisioning End   <===");
+        return ProvisionDevice(scopeId, deviceId, deviceKey, g_pnp_model_id, appConext);
     } 
 
     return NULL;
@@ -111,7 +107,7 @@ IOTHUB_DEVICE_CLIENT_LL_HANDLE IoTHubInitialize(APP_CONTEXT* appConext)
         LogError("Failure to initialize client.  Error=%d", iothubInitResult);
         isConfigured = false;
     }
-    else if ((deviceHandle = CreateDeviceClientLLHandle()) == NULL)
+    else if ((deviceHandle = CreateDeviceClientLLHandle(appConext)) == NULL)
     {
         LogError("Failure creating IotHub client.  Hint: Check your connection string or DPS configuration");
         isConfigured = false;

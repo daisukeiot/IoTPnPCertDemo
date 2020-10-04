@@ -28,11 +28,34 @@ static void dpsRegisterDeviceCallback(PROV_DEVICE_RESULT register_result, const 
         DPS_CLIENT_CONTEXT* user_ctx = (DPS_CLIENT_CONTEXT*)user_context;
         if (register_result == PROV_DEVICE_RESULT_OK)
         {
-            LogInfo("Registration Information received from service: %s!", iothub_uri);
-            (void)mallocAndStrcpy_s(&user_ctx->iothub_uri, iothub_uri);
-            (void)mallocAndStrcpy_s(&user_ctx->device_id, device_id);
-            LogInfo("IoT Hub   %s", user_ctx->iothub_uri);
-            LogInfo("Device Id %s", user_ctx->device_id);
+
+            LogInfo("Registration Information received from DPS");
+
+            if (user_ctx->iothub_uri != NULL)
+            {
+                free(user_ctx->iothub_uri);
+            }
+
+            if (mallocAndStrcpy_s(&user_ctx->iothub_uri, iothub_uri) != 0)
+            {
+                LogError("Failed to copy IoT Hub Uri");
+            }
+            else{
+                LogInfo("IoT Hub     : %s", user_ctx->iothub_uri);
+            }
+
+            if (user_ctx->device_id != NULL)
+            {
+                free(user_ctx->device_id);
+            }
+
+            if (mallocAndStrcpy_s(&user_ctx->device_id, device_id) != 0)
+            {
+                LogError("Failed to copy Device Id");
+            }
+            else{
+                LogInfo("Device Id   : %s", user_ctx->device_id);
+            }
 
             user_ctx->registration_complete = 1;
         }
@@ -44,13 +67,15 @@ static void dpsRegisterDeviceCallback(PROV_DEVICE_RESULT register_result, const 
     }
 }
 
-IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDeviceX509(const char* scopeId, const char* modelId)
+IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDeviceX509(const char* scopeId, const char* modelId, APP_CONTEXT* appConext)
 {
     IOTHUB_DEVICE_CLIENT_LL_HANDLE deviceHandle = NULL;
     PROV_DEVICE_LL_HANDLE provDeviceHandle = NULL;
     STRING_HANDLE modelIdPayload = NULL;
     PROV_DEVICE_RESULT provDeviceResult;
     DPS_CLIENT_CONTEXT dpsContext;
+
+    printf("==================================================\r\nStart device provisioning with X.509\r\n==================================================\r\n");
 
     memset(&dpsContext, 0, sizeof(DPS_CLIENT_CONTEXT));
     dpsContext.registration_complete = false;
@@ -65,7 +90,7 @@ IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDeviceX509(const char* scopeId, const ch
         }
     }
 
-    LogInfo("%s ScopeID %s ModelId %s", __func__, scopeId, modelId);
+    LogInfo("%s\r\nID Scope   : %s\r\nModel ID   : %s", __func__, scopeId, modelId);
 
     if (prov_dev_security_init(SECURE_DEVICE_TYPE_X509) != 0)
     {
@@ -105,7 +130,7 @@ IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDeviceX509(const char* scopeId, const ch
     if (dpsContext.registration_complete == 1)
     {
 
-        LogInfo("Provisioning with X509 Completed");
+        LogInfo("Connecting to IoT Hub");
 
         if (iothub_security_init(IOTHUB_SECURITY_TYPE_X509) != 0)
         {
@@ -117,6 +142,11 @@ IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDeviceX509(const char* scopeId, const ch
         }
         else{
             LogInfo("IoTHubDeviceClient_LL_CreateFromDeviceAuth Success");
+            if (appConext->iothub_uri != NULL)
+            {
+                free(appConext->iothub_uri);
+            }
+            (void)mallocAndStrcpy_s(&appConext->iothub_uri, dpsContext.iothub_uri);
         }
     }
 
@@ -129,7 +159,7 @@ IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDeviceX509(const char* scopeId, const ch
 }
 
 
-IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDevice(const char* scopeId, const char* deviceId, const char* deviceKey, const char* modelId)
+IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDevice(const char* scopeId, const char* deviceId, const char* deviceKey, const char* modelId, APP_CONTEXT* appConext)
 {
     IOTHUB_DEVICE_CLIENT_LL_HANDLE deviceHandle = NULL;
     PROV_DEVICE_LL_HANDLE provDeviceHandle = NULL;
@@ -141,6 +171,8 @@ IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDevice(const char* scopeId, const char* 
     dpsContext.registration_complete = false;
     dpsContext.sleep_time = 100;
 
+    printf("==================================================\r\nStart device provisioning with symmetric key\r\n==================================================\r\n");
+
     if (modelId != NULL)
     {
         if ((modelIdPayload = STRING_construct_sprintf("{\"modelId\":\"%s\"}", modelId)) == NULL)
@@ -150,7 +182,7 @@ IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDevice(const char* scopeId, const char* 
         }
     }
 
-    LogInfo("%s ScopeID %s Device ID %s Device Key %s ModelId %s", __func__, scopeId, deviceId, deviceKey, modelId);
+    LogInfo("Provisioning Data\r\nID Scope   : %s\r\nDevice ID  : %s\r\nDevice Key : %s\r\nModel ID   : %s", scopeId, deviceId, deviceKey, modelId);
 
     if ((prov_dev_set_symmetric_key_info(deviceId, deviceKey) != 0))
     {
@@ -205,6 +237,11 @@ IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDevice(const char* scopeId, const char* 
         }
         else{
             LogInfo("IoTHubDeviceClient_LL_CreateFromDeviceAuth Success");
+            if (appConext->iothub_uri != NULL)
+            {
+                free(appConext->iothub_uri);
+            }
+            (void)mallocAndStrcpy_s(&appConext->iothub_uri, dpsContext.iothub_uri);
         }
     }
 
