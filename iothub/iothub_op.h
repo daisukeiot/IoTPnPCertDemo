@@ -24,7 +24,7 @@
 #include <certs.h>
 #endif // SET_TRUSTED_CERT_IN_SAMPLES
 
-
+#define DEBUG_TELEMETRY
 static const char IOTHUB_CS[] = "IOTHUB_CS";
 static const char DPS_IDSCOPE[]   = "DPS_IDSCOPE";
 static const char DPS_X509[]   = "DPS_X509";

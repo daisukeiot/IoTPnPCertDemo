@@ -12,6 +12,9 @@ static const int g_dpsRegistrationPollSleep = 1000;
 MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(PROV_DEVICE_RESULT, PROV_DEVICE_RESULT_VALUE);
 MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(PROV_DEVICE_REG_STATUS, PROV_DEVICE_REG_STATUS_VALUES);
 
+DPS_CLIENT_CONTEXT dpsContext;
+bool g_provisioned = false;
+
 static void dpsRegistrationStatusCallback(PROV_DEVICE_REG_STATUS register_result, void* user_context)
 {
     LogInfo("Provisioning Status: %s", MU_ENUM_TO_STRING(PROV_DEVICE_REG_STATUS, register_result));
@@ -73,62 +76,68 @@ IOTHUB_DEVICE_CLIENT_LL_HANDLE ProvisionDeviceX509(const char* scopeId, const ch
     PROV_DEVICE_LL_HANDLE provDeviceHandle = NULL;
     STRING_HANDLE modelIdPayload = NULL;
     PROV_DEVICE_RESULT provDeviceResult;
-    DPS_CLIENT_CONTEXT dpsContext;
 
     printf("==================================================\r\nStart device provisioning with X.509\r\n==================================================\r\n");
-
-    memset(&dpsContext, 0, sizeof(DPS_CLIENT_CONTEXT));
-    dpsContext.registration_complete = false;
-    dpsContext.sleep_time = 100;
-
-    if (modelId != NULL)
+    if (g_provisioned == false)
     {
-        if ((modelIdPayload = STRING_construct_sprintf("{\"modelId\":\"%s\"}", modelId)) == NULL)
+        memset(&dpsContext, 0, sizeof(DPS_CLIENT_CONTEXT));
+        dpsContext.registration_complete = false;
+        dpsContext.sleep_time = 100;
+    }
+
+    if (dpsContext.registration_complete == false)
+    {
+        if (modelId != NULL)
         {
-            LogError("Cannot allocate DPS payload for modelId.");
-            return NULL;
+            if ((modelIdPayload = STRING_construct_sprintf("{\"modelId\":\"%s\"}", modelId)) == NULL)
+            {
+                LogError("Cannot allocate DPS payload for modelId.");
+                return NULL;
+            }
         }
-    }
 
-    LogInfo("%s\r\nID Scope   : %s\r\nModel ID   : %s", __func__, scopeId, modelId);
+        LogInfo("%s\r\nID Scope   : %s\r\nModel ID   : %s", __func__, scopeId, modelId);
 
-    if (prov_dev_security_init(SECURE_DEVICE_TYPE_X509) != 0)
-    {
-        LogError("prov_dev_security_init failed");
-    }
-    else if ((provDeviceHandle = Prov_Device_LL_Create(DPS_GLOBAL_ENDPOINT, scopeId, Prov_Device_MQTT_Protocol)) == NULL)
-    {
-        LogError("failed calling Prov_Device_Create");
-    }
-    else if ((provDeviceResult = Prov_Device_LL_SetOption(provDeviceHandle, PROV_OPTION_LOG_TRACE, &g_hubClientTraceEnabled)) != PROV_DEVICE_RESULT_OK)
-    {
-        LogError("Setting provisioning tracing on failed, error=%d", provDeviceResult);
-    }
-    else if (modelIdPayload != NULL && ((provDeviceResult = Prov_Device_LL_Set_Provisioning_Payload(provDeviceHandle, STRING_c_str(modelIdPayload))) != PROV_DEVICE_RESULT_OK))
-    {
-        LogError("Failed setting provisioning data, error=%d", provDeviceResult);
-    }
-    else if ((provDeviceResult = Prov_Device_LL_Register_Device(provDeviceHandle, dpsRegisterDeviceCallback, &dpsContext, dpsRegistrationStatusCallback, &dpsContext)) != PROV_DEVICE_RESULT_OK)
-    {
-        LogError("Prov_Device_LL_Register_Device failed, error=%d", provDeviceResult);
-    }
-    else
-    {
-        do
+        if (prov_dev_security_init(SECURE_DEVICE_TYPE_X509) != 0)
         {
-            Prov_Device_LL_DoWork(provDeviceHandle);
-            ThreadAPI_Sleep(dpsContext.sleep_time);
+            LogError("prov_dev_security_init failed");
         }
-        while (dpsContext.registration_complete == 0);
-    }
+        else if ((provDeviceHandle = Prov_Device_LL_Create(DPS_GLOBAL_ENDPOINT, scopeId, Prov_Device_MQTT_Protocol)) == NULL)
+        {
+            LogError("failed calling Prov_Device_Create");
+        }
+        else if ((provDeviceResult = Prov_Device_LL_SetOption(provDeviceHandle, PROV_OPTION_LOG_TRACE, &g_hubClientTraceEnabled)) != PROV_DEVICE_RESULT_OK)
+        {
+            LogError("Setting provisioning tracing on failed, error=%d", provDeviceResult);
+        }
+        else if (modelIdPayload != NULL && ((provDeviceResult = Prov_Device_LL_Set_Provisioning_Payload(provDeviceHandle, STRING_c_str(modelIdPayload))) != PROV_DEVICE_RESULT_OK))
+        {
+            LogError("Failed setting provisioning data, error=%d", provDeviceResult);
+        }
+        else if ((provDeviceResult = Prov_Device_LL_Register_Device(provDeviceHandle, dpsRegisterDeviceCallback, &dpsContext, dpsRegistrationStatusCallback, &dpsContext)) != PROV_DEVICE_RESULT_OK)
+        {
+            LogError("Prov_Device_LL_Register_Device failed, error=%d", provDeviceResult);
+        }
+        else
+        {
+            do
+            {
+                Prov_Device_LL_DoWork(provDeviceHandle);
+                ThreadAPI_Sleep(dpsContext.sleep_time);
+            }
+            while (dpsContext.registration_complete == 0);
+        }
 
-    if (provDeviceHandle != NULL)
-    {
-        Prov_Device_LL_Destroy(provDeviceHandle);
+        if (provDeviceHandle != NULL)
+        {
+            Prov_Device_LL_Destroy(provDeviceHandle);
+        }
+
     }
 
     if (dpsContext.registration_complete == 1)
     {
+        g_provisioned = true;
 
         LogInfo("Connecting to IoT Hub");
 

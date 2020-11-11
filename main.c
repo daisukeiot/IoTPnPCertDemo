@@ -300,7 +300,6 @@ static bool BuildMaxMinCommandResponse(unsigned char** response, size_t* respons
     return result;
 }       
 
-
 /*
 ** Callback on Device Method
 */

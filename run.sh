@@ -11,7 +11,7 @@
 #
 
 # Set IoT Plug and Play Model ID
-export PNP_MODEL_ID='dtmi:com:Example:Thermostat;1'
+export PNP_MODEL_ID='dtmi:com:example:Thermostat;1'
 
 # Set ID Scope for DPS
 export DPS_IDSCOPE='0ne000FFA42'
