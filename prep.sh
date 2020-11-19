@@ -34,7 +34,7 @@ FOLDER_CERTIFICATE=${SCRIPTPATH}/certificate
 FOLDER_CMAKE=${SCRIPTPATH}/cmake
 
 X509_DEVICE_KEY="new-device.key.pem"
-X509_CERTIFICATE_="new-device.private.pem"
+X509_CERTIFICATE="new-device.cert.pem"
 
 FORCE=false
 VERBOSE=false
