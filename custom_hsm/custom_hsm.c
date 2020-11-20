@@ -12,11 +12,10 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/x509v3.h>
+#include <unistd.h>
 
-static const char* CERTIFICATE_FILE = "./new-device.cert.pem";
-static const char* CERTIFICATE_KEY = "./new-device.key.pem";
-
-// static const char DPS_DEVICEKEY[] = "DPS_DEVICEKEY";
+static char CERTIFICATE_FILE[1024];
+static char CERTIFICATE_KEY[1024];
 
 typedef struct CUSTOM_HSM_DATA_TAG
 {
@@ -63,15 +62,28 @@ HSM_CLIENT_HANDLE custom_hsm_create_x509()
     ASN1_STRING *entryData = NULL;
     int length;
     char buffer[1024];
+    char hostNameBuffer[256];
 
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
 
     printf("=======================================================\r\nReading X.509 Certificate\r\n");
 
-    if ((hsm_info = malloc(sizeof(CUSTOM_HSM_DATA))) == NULL)
+    if (gethostname(hostNameBuffer, sizeof(hostNameBuffer)) == -1)
     {
-        printf("Error: Failued allocating hsm info\r\n");
+        printf("Error: failed to get hostname\r\n");
+    }
+    else if (snprintf(CERTIFICATE_FILE, sizeof(CERTIFICATE_FILE), "./%s.cer.pem", hostNameBuffer) < 0)
+    {
+        printf("Error: failed to snprintf CERTIFICATE_FILE\r\n");
+    }
+    else if (snprintf(CERTIFICATE_KEY, sizeof(CERTIFICATE_KEY), "./%s.key.pem", hostNameBuffer) < 0)
+    {
+        printf("Error: failed to snprintf CERTIFICATE_KEY\r\n");
+    }
+    else if ((hsm_info = malloc(sizeof(CUSTOM_HSM_DATA))) == NULL)
+    {
+        printf("Error: failed allocating hsm info\r\n");
     }
     else if ((memset(hsm_info, 0, sizeof(CUSTOM_HSM_DATA))) == NULL)
     {

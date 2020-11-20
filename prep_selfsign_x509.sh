@@ -1,3 +1,4 @@
+
 #
 # Script to : 
 #  - Clone Azure IoT SDK C
@@ -28,13 +29,14 @@ SCRIPT=`realpath -s $0`
 SCRIPTPATH=`dirname $SCRIPT`
 
 # this becomes Common Name of the certificate
-export REGISTRATION_ID=${HOSTNAME}
+REGISTRATION_ID="${HOSTNAME}"
 FOLDER_SDK=${SCRIPTPATH}/azure-iot-sdk-c
 FOLDER_CERTIFICATE=${SCRIPTPATH}/certificate
 FOLDER_CMAKE=${SCRIPTPATH}/cmake
 
-X509_DEVICE_KEY="new-device.key.pem"
-X509_CERTIFICATE="new-device.cert.pem"
+DAYS=30
+ROOT_CA="rootCA"
+ROOT_CA_SUBJECT="/C=US/ST=WA/O=TestOrg/OU=TestOu"
 
 FORCE=false
 VERBOSE=false
@@ -106,22 +108,34 @@ else
         mkdir "${FOLDER_CERTIFICATE}"
     fi
 
-    if [ ! -d "${FOLDER_CERTIFICATE}/work" ]; then
-        Log "Creating ${FOLDER_CERTIFICATE}/work"
-        mkdir "${FOLDER_CERTIFICATE}/work"
-    fi
-
     Log "Generating new X509 certificate..."
-    cd "${FOLDER_CERTIFICATE}/work"
-    cp ${FOLDER_SDK}/tools/CACertificates/*.sh "${FOLDER_CERTIFICATE}/work"
-    cp ${FOLDER_SDK}/tools/CACertificates/*.cnf "${FOLDER_CERTIFICATE}/work"
-    chmod a+x *.sh
-    ./certGen.sh create_root_and_intermediate
-    ./certGen.sh create_device_certificate ${REGISTRATION_ID}
-    chmod a+w ${FOLDER_CERTIFICATE}/*.pem
+    cd "${FOLDER_CERTIFICATE}"
+
+    Log "Generating Root CA..."
+    openssl genrsa -out ${ROOT_CA}.key.pem 2048 > /dev/null 2>&1
+    openssl req -x509 -new -nodes -key ${ROOT_CA}.key.pem -sha256 -days ${DAYS} -out ${ROOT_CA}.cer.pem -extensions "v3_ca" -subj ${ROOT_CA_SUBJECT} > /dev/null 2>&1
+    Log "Root CA generated : ${ROOT_CA}.key.pem / ${ROOT_CA}.cer.pem"
+
+    Log "Generating Device Certificate ($REGISTRATION_ID.cer.pem)"
+    if [ -e ${REGISTRATION_ID}.key.pem ]; then
+        rm -f ${REGISTRATION_ID}.key.pem
+    fi
+    openssl genrsa -out ${REGISTRATION_ID}.key.pem 2048 > /dev/null 2>&1
+
+    if [ -e ${REGISTRATION_ID}.csr ]; then
+        rm ${REGISTRATION_ID}.csr
+    fi
+    openssl req -new -key ${REGISTRATION_ID}.key.pem -out ${REGISTRATION_ID}.csr.pem -subj "${ROOT_CA_SUBJECT}/CN=${HOSTNAME}" -days 100 -sha256 -extensions v3_ca > /dev/null 2>&1
+
+    if [ -e ${REGISTRATION_ID}.cer.pem ]; then
+        rm -f ${REGISTRATION_ID}.cer.pem
+    fi
+    openssl x509 -req -in ${REGISTRATION_ID}.csr.pem -CA ${ROOT_CA}.cer.pem -CAkey ${ROOT_CA}.key.pem -CAcreateserial -out ${REGISTRATION_ID}.cer.pem -days ${DAYS} -sha256 > /dev/null 2>&1
+
     printf "%s\n" "Certificate generated ============================" \
-                  "${FOLDER_CERTIFICATE}/work/certs/${X509_CERTIFICATE}" \
-                  "${FOLDER_CERTIFICATE}/work/private/${X509_DEVICE_KEY}"
+                  "${FOLDER_CERTIFICATE}/${REGISTRATION_ID}.key.pem" \
+                  "${FOLDER_CERTIFICATE}/${REGISTRATION_ID}.cer.pem"
+
 fi
 
 # Compile the code
@@ -134,9 +148,10 @@ cmake .. -Duse_prov_client=ON -Dhsm_type_x509:BOOL=ON -Dhsm_type_symm_key:BOOL=O
 cmake --build .
 
 # copy certificate files
-cp ${FOLDER_CERTIFICATE}/work/certs/${X509_CERTIFICATE} ${FOLDER_CMAKE}/${REGISTRATION_ID}.cer.pem
-cp ${FOLDER_CERTIFICATE}/work/private/${X509_DEVICE_KEY} ${FOLDER_CMAKE}/${REGISTRATION_ID}.key.pem
+cp "${FOLDER_CERTIFICATE}/${REGISTRATION_ID}.key.pem" ${FOLDER_CMAKE}
+cp "${FOLDER_CERTIFICATE}/${REGISTRATION_ID}.cer.pem" ${FOLDER_CMAKE}
 chmod a+w ${FOLDER_CMAKE}/*.pem
+
 printf "%s\n" "================================================"
 # openssl x509 -in ${FOLDER_CERTIFICATE}/new-device.cert.pem -text -noout
 printf "%s\n" "Register ${FOLDER_CMAKE}/${REGISTRATION_ID}.cer.pem to Certification Portal"
