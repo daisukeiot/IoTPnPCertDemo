@@ -373,11 +373,7 @@ int processTelemetry(APP_CONTEXT* appContext)
     {
         LogError("Not Connected");
     }
-    else if ((messageHandle = IoTHubMessage_CreateFromString(temperatureStringBuffer)) == NULL)
-    {
-        LogError("IoTHubMessage_CreateFromString failed");
-    }
-    else if ((sendMessage(deviceClient, temperatureStringBuffer)) != true)
+    else if ((sendMessage(deviceClient, temperatureStringBuffer, NULL)) != true)
     {
         LogError("Unable to send telemetry message");
     }

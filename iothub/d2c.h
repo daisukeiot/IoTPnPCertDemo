@@ -8,6 +8,8 @@
 
 #include "iothub_op.h"
 
-bool sendMessage(IOTHUB_DEVICE_CLIENT_LL_HANDLE deviceHandle, char* message);
+static const char PnP_TelemetryComponentProperty[] = "$.sub";
+
+bool sendMessage(IOTHUB_DEVICE_CLIENT_LL_HANDLE deviceHandle, char* message, char* componentName);
 
 #endif // _IOTHUB_D2C

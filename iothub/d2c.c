@@ -25,17 +25,23 @@ static void sendMessageCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *
 **
 ** To Do : Add Message Property
 */
-bool sendMessage(IOTHUB_DEVICE_CLIENT_LL_HANDLE deviceHandle, char* message)
+
+bool sendMessage(IOTHUB_DEVICE_CLIENT_LL_HANDLE deviceHandle, char* message, char* componentName)
 {
     IOTHUB_CLIENT_RESULT iothubResult;
     IOTHUB_MESSAGE_HANDLE messageHandle = IoTHubMessage_CreateFromString(message);
+    IOTHUB_MESSAGE_RESULT iothubMessageResult;
 
 	if (messageHandle == 0) {
 		LogError("Unable to create a new IoTHubMessage");
 		return false;
 	}
 
-    if ((iothubResult = IoTHubDeviceClient_LL_SendEventAsync(deviceHandle, messageHandle, sendMessageCallback, message)) != IOTHUB_CLIENT_OK)
+    if (componentName != NULL && (iothubMessageResult = IoTHubMessage_SetProperty(messageHandle, PnP_TelemetryComponentProperty, "AmbientLight")) != IOTHUB_MESSAGE_OK)
+    {
+        LogError("IoTHubMessage_CreateFromString failed");
+    }
+    else if ((iothubResult = IoTHubDeviceClient_LL_SendEventAsync(deviceHandle, messageHandle, sendMessageCallback, message)) != IOTHUB_CLIENT_OK)
     {
         LogError("IoTHubClient_LL_SendEventAsync : %s", MU_ENUM_TO_STRING(IOTHUB_CLIENT_RESULT, iothubResult));
     }
